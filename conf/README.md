@@ -317,10 +317,17 @@ higher priority).
       * `nodepool_replicas` - number of replicas of nodepool for each cluster
       * `hosted_odf_registry` - registry for hosted ODF
       * `hosted_odf_version` - version of ODF to be deployed on hosted clusters
+      * `cp_availability_policy` - "HighlyAvailable" or "SingleReplica"; if not provided the default value is "SingleReplica"
 * `wait_timeout_for_healthy_osd_in_minutes` - timeout waiting for healthy OSDs before continuing upgrade (see https://bugzilla.redhat.com/show_bug.cgi?id=2276694 for more details)
 * `odf_provider_mode_deployment` - True if you would like to enable provider mode deployment.
 * `client_subcription_image` - ODF subscription image details for the storageclients.
 * `channel_to_client_subscription` - Channel value for the odf subscription image for storageclients.
+* `custom_vpc` - Applicable only for IMB Cloud IPI deployment where we want to create custom VPC and networking
+  with specific Address prefixes to prevent /18 CIDR to be used.
+* `ip_prefix` - Applicable only for IMB Cloud IPI deployment when custom_vpc, if not specified: 27 prefix will be used.
+* `ceph_threshold_backfill_full_ratio` - Configure backfillFullRatio the ceph osd full thresholds value in the StorageCluster CR.
+* `ceph_threshold_full_ratio` - Configure fullRatio the ceph osd full thresholds value in the StorageCluster CR.
+* `ceph_threshold_near_full_ratio` - Configure nearFullRatio the ceph osd full thresholds value in the StorageCluster CR.
 
 #### UPGRADE
 

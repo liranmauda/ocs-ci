@@ -130,7 +130,7 @@ HEALTHY_OB = "OPTIMAL"
 HEALTHY_OBC = STATUS_BOUND
 HEALTHY_OBC_CLI_PHASE = "Phase:Bound"
 HEALTHY_OB_CLI_MODE = "Mode:OPTIMAL"
-HEALTHY_PV_BS = ["`OPTIMAL`", "`LOW_CAPACITY`"]
+HEALTHY_PV_BS = ["OPTIMAL", "LOW_CAPACITY"]
 
 # noobaa-core config.js parameters
 CONFIG_JS_PREFIX = "CONFIG_JS_"
@@ -158,6 +158,7 @@ PVC = "PersistentVolumeClaim"
 POD = "Pod"
 ROUTE = "Route"
 SERVICE = "Service"
+DAEMONSET = "DaemonSet"
 CEPHOBJECTSTORE = "cephobjectstore"
 NODE = "Node"
 DEPLOYMENTCONFIG = "deploymentconfig"
@@ -249,6 +250,7 @@ IGNORE_SC_FLEX = "rook-ceph-block"
 TEST_FILES_BUCKET = "ocsci-test-files"
 ROOK_REPOSITORY = "https://github.com/rook/rook.git"
 OPENSHIFT_STORAGE_NAMESPACE = "openshift-storage"
+OPENSHIFT_NAMESPACE = "openshift"
 OPENSHIFT_STORAGE_CLIENT_NAMESPACE = "openshift-storage-client"
 OPENSHIFT_STORAGE_EXTENDED_NAMESPACE = "openshift-storage-extended"
 OPENSHIFT_STORAGE_CLIENT_NAMESPACE = "openshift-storage-client"
@@ -433,6 +435,12 @@ CNV_OPERATORNAME = "kubevirt-hyperconverged.openshift-cnv"
 CNV_SELECTOR = f"operators.coreos.com/{CNV_OPERATORNAME}"
 HCP_REGISTRY = "quay.io/hypershift/hypershift-operator"
 HCP_REPOSITORY = "https://github.com/openshift/hypershift.git"
+CONTROL_PLANE_AVAILABILITY_POLICY_HA = "HighlyAvailable"
+CONTROL_PLANE_AVAILABILITY_POLICY_SINGLE = "SingleReplica"
+CONTROL_PLANE_AVAILABILITY_POLICIES = [
+    CONTROL_PLANE_AVAILABILITY_POLICY_SINGLE,
+    CONTROL_PLANE_AVAILABILITY_POLICY_HA,
+]
 
 # CNV VM constants
 VIRTUAL_MACHINE = "VirtualMachine"
@@ -1415,6 +1423,21 @@ HCI_PROVIDER_CLIENT_PLATFORMS = [
     HCI_BAREMETAL,
     HCI_VSPHERE,
 ]
+
+IBM_CLOUD_SUBNETS = {
+    # Washington D.C.
+    "us-east": {
+        "us-east-1": "10.241.0.0/18",
+        "us-east-2": "10.241.64.0/18",
+        "us-east-3": "10.241.128.0/18",
+    },
+    # Dalas
+    "us-south": {
+        "us-south-1": "10.240.0.0/18",
+        "us-south-2": "10.240.64.0/18",
+        "us-south-3": "10.240.128.0/18",
+    },
+}
 
 HCI_PC_OR_MS_PLATFORM = MANAGED_SERVICE_PLATFORMS + HCI_PROVIDER_CLIENT_PLATFORMS
 # AWS i3 worker instance for LSO
@@ -2402,6 +2425,22 @@ osd_memory_target_cgroup_limit_ratio = 0.8
 bluestore_prefer_deferred_size_hdd = 0
 """
 
+ROOK_CEPH_CONFIG_VALUES_416 = """
+[global]
+bdev_flock_retry = 20
+mon_osd_full_ratio = .85
+mon_osd_backfillfull_ratio = .8
+mon_osd_nearfull_ratio = .75
+mon_max_pg_per_osd = 600
+mon_pg_warn_max_object_skew = 0
+mon_data_avail_warn = 15
+mon_warn_on_pool_no_redundancy = false
+[osd]
+osd_memory_target_cgroup_limit_ratio = 0.8
+bluestore_prefer_deferred_size_hdd = 0
+"""
+
+
 CEPH_DEBUG_CONFIG_VALUES = """
 [mon]
 debug_mon = 30
@@ -2721,6 +2760,13 @@ DRPC_PATH = os.path.join(TEMPLATE_DIR, "DR", "drpc.yaml")
 CLUSTERROLEBINDING_APPSET_PULLMODEL_PATH = os.path.join(
     TEMPLATE_DIR, "DR", "clusterrolebinding_appset_pullmodel.yaml"
 )
+THANOS_PATH = os.path.join(TEMPLATE_DIR, "DR", "thanos.yaml")
+MULTICLUSTEROBSERVABILITY_PATH = os.path.join(
+    TEMPLATE_DIR, "DR", "multiclusterobservability.yaml"
+)
+OBSERVABILITYMETRICSCONFIGMAP_PATH = os.path.join(
+    TEMPLATE_DIR, "DR", "observability-metrics-configmap.yaml"
+)
 APPLICATION_SET = "ApplicationSet"
 PLACEMENT = "Placement"
 GITOPS_CLUSTER_NAMESPACE = "openshift-gitops"
@@ -2820,3 +2866,6 @@ CCOCTL_LOG_FILE = "ccoctl-service-id.log"
 # Noobaa Secrets
 NOOBAA_BACKEND_SECRET = "noobaa-root-master-key-backend"
 NOOBAA_VOLUME_SECRET = "noobaa-root-master-key-volume"
+
+# ascii characters
+ENTER_KEY = chr(13)

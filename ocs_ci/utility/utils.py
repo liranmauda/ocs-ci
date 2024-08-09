@@ -1084,14 +1084,15 @@ def get_openshift_client(
         # record current working directory and switch to BIN_DIR
         previous_dir = os.getcwd()
         os.chdir(bin_dir)
-        url = get_openshift_mirror_url("openshift-client", version)
+
         tarball = "openshift-client.tar.gz"
         try:
+            url = get_openshift_mirror_url("openshift-client", version)
             download_file(url, tarball)
             run_cmd(f"tar xzvf {tarball} oc kubectl")
             delete_file(tarball)
         except Exception as e:
-            log.error(f"Failed to download the url {url} with exception '{e}'")
+            log.error(f"Failed to download the openshift client. Exception '{e}'")
             # check given version is GA'ed or not
             if "nightly" in version:
                 get_nightly_oc_via_ga(version, tarball)
@@ -1251,7 +1252,7 @@ def get_vault_cli(bind_dir=None, force_download=False):
 
 
 def ensure_nightly_build_availability(build_url):
-    base_build_url = build_url.rsplit("/", 1)[0]
+    base_build_url = build_url.rsplit("/", 1)[0] + "/"
     r = requests.get(base_build_url)
     extracting_condition = b"Extracting" in r.content
     if extracting_condition:
@@ -4824,7 +4825,7 @@ def add_time_report_to_email(session, soup):
     summary_tag.insert_after(time_div)
 
 
-def get_oadp_version(namespace=constants.ACM_HUB_BACKUP_NAMESPACE):
+def get_oadp_version(namespace=constants.OADP_NAMESPACE):
     """
     Returns:
         str: returns version string
@@ -4839,7 +4840,7 @@ def get_oadp_version(namespace=constants.ACM_HUB_BACKUP_NAMESPACE):
             return csv["spec"]["version"]
 
 
-def get_acm_version():
+def get_acm_version(namespace=constants.ACM_HUB_NAMESPACE):
     """
     Get ACM version from CSV
 
@@ -4850,7 +4851,7 @@ def get_acm_version():
     from ocs_ci.ocs.resources.csv import get_csvs_start_with_prefix
 
     csv_list = get_csvs_start_with_prefix(
-        "advanced-cluster-management", namespace=constants.ACM_HUB_NAMESPACE
+        "advanced-cluster-management", namespace=namespace
     )
     for csv in csv_list:
         if "advanced-cluster-management" in csv["metadata"]["name"]:
@@ -4993,7 +4994,7 @@ def get_latest_release_version():
 
     """
     cmd = (
-        "curl -s https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt | "
+        "curl -sL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/release.txt | "
         "awk '/^Name:/ {print $2}'"
     )
     try:
