@@ -75,6 +75,7 @@ from ocs_ci.utility import templating, version
 from ocs_ci.utility.deployment import get_ocp_ga_version
 from ocs_ci.utility.json import SetToListJSONEncoder
 from ocs_ci.utility.managedservice import generate_onboarding_token
+from ocs_ci.utility.networking import create_drs_machine_config, create_drs_nad
 from ocs_ci.utility.retry import retry, catch_exceptions
 from ocs_ci.utility.utils import (
     exec_cmd,
@@ -1113,6 +1114,11 @@ class HostedClients(HyperShiftBase):
             )
         )
 
+        if config.DEPLOYMENT.get("enable_data_replication_separation"):
+            create_drs_machine_config()
+            for cluster_name in cluster_names:
+                create_drs_nad(cluster_name)
+
         log_step("Verify storage is available on all hosted ODF clusters")
         hosted_odf_storage_verified = []
 
@@ -1879,6 +1885,9 @@ class HypershiftHostedOCP(
             .get(self.name)
             .get("disable_default_sources", True)
         )
+        data_replication_separation = config.DEPLOYMENT.get(
+            "enable_data_replication_separation"
+        )
 
         hosted_cluster_platform = (
             config.ENV_DATA["clusters"]
@@ -1940,6 +1949,7 @@ class HypershiftHostedOCP(
                 cp_availability_policy=cp_availability_policy,
                 infra_availability_policy=infra_availability_policy,
                 disable_default_sources=disable_default_sources,
+                data_replication_separation=data_replication_separation,
             )
 
     def deploy_dependencies(

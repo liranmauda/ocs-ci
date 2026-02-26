@@ -2,17 +2,23 @@
 Module that contains network related functions
 """
 
+import base64
 import ipaddress
 import logging
+import os
+import yaml
 import re
 
 from ocs_ci.framework import config
+from ocs_ci.utility.templating import load_yaml
+from ocs_ci.ocs import constants
+from ocs_ci.ocs.node import get_worker_nodes
 from ocs_ci.ocs.ocp import OCP
+from ocs_ci.ocs.resources.ocs import OCS
 from ocs_ci.ocs.exceptions import (
     UnavailableResourceException,
     CommandFailed,
 )
-from ocs_ci.ocs.node import get_worker_nodes
 
 
 logger = logging.getLogger(__name__)
@@ -272,3 +278,69 @@ def add_data_replication_separation_to_cluster_data(cluster_data):
 
         cluster_data["spec"]["network"]["addressRanges"]["public"] = [str_network]
     return cluster_data
+
+
+def create_drs_machine_config():
+    """
+    Create Machine Config that moves the second physical network to a bridge.
+    This is done for HCP configuraion of data replication separation.
+
+    If the MachineConfig '99-br-storage-nmstate-worker' already exists,
+    this function will skip creation and return early.
+    """
+    from ocs_ci.ocs.resources.machineconfig import machineconfig_exists
+
+    mc_name = "99-br-storage-nmstate-worker"
+    if machineconfig_exists(mc_name):
+        logger.info("MachineConfig %s already exists, skipping creation", mc_name)
+        return
+
+    interfaces_path = os.path.join(
+        constants.TEMPLATE_DEPLOYMENT_DIR, "drs_interfaces.yaml"
+    )
+    interfaces_yaml = load_yaml(interfaces_path)
+    worker = get_worker_nodes()[0]
+    interface_name, _, _ = get_node_private_ip(worker)
+    interfaces_yaml["interfaces"][0]["bridge"]["port"][0]["name"] = interface_name
+    interfaces_yaml["interfaces"][1]["name"] = interface_name
+    interfaces_yaml_string = yaml.dump(interfaces_yaml)
+    base64_interfaces = base64.b64encode(interfaces_yaml_string.encode()).decode()
+    machineconfigurations_path = os.path.join(
+        constants.TEMPLATE_DEPLOYMENT_DIR, "drs_machineconfig.yaml"
+    )
+    machineconfigurations_yaml = load_yaml(machineconfigurations_path)
+    machineconfigurations_yaml["spec"]["config"]["storage"]["files"][0]["contents"][
+        "source"
+    ] = f"data:text/plain;base64,{base64_interfaces}"
+    with config.RunWithProviderConfigContextIfAvailable():
+        machineconfigurations_obj = OCS(**machineconfigurations_yaml)
+        machineconfigurations_obj.apply(**machineconfigurations_yaml)
+
+
+def create_drs_nad(cluster_name):
+    """
+    Create NetworkAttachmentDefinition in namespace where the virt-launcher pods exist.
+    This is done for HCP configuraion of data replication separation.
+
+    The namespace is constructed as f"clusters-{cluster_name}". If the namespace
+    doesn't exist, it will be created automatically.
+
+    Args:
+        cluster_name (str): cluster name used to construct the namespace on provider cluster
+    """
+    namespace = f"clusters-{cluster_name}"
+
+    # Check if namespace exists, create if it doesn't
+    ocp_ns = OCP(kind="namespace")
+    if not ocp_ns.is_exist(resource_name=namespace):
+        logger.info("Namespace %s does not exist, creating it", namespace)
+        ocp_ns.new_project(namespace)
+    else:
+        logger.info("Namespace %s already exists", namespace)
+
+    nad_path = os.path.join(constants.TEMPLATE_DEPLOYMENT_DIR, "drs_nad.yaml")
+    nad_yaml = load_yaml(nad_path)
+    nad_yaml["metadata"]["namespace"] = namespace
+    with config.RunWithProviderConfigContextIfAvailable():
+        nad_obj = OCS(**nad_yaml)
+        nad_obj.apply(**nad_yaml)
