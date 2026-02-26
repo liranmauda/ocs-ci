@@ -419,7 +419,16 @@ def verify_image_versions(old_images, upgrade_version, version_before_upgrade):
                 count=rgw_count,
             )
     if upgrade_version >= parse_version("4.6"):
-        verify_pods_upgraded(old_images, selector=constants.OCS_METRICS_EXPORTER)
+        skip_metrics_exporter = upgrade_version >= parse_version(
+            "4.21"
+        ) and config.DEPLOYMENT.get("external_mode")
+        if not skip_metrics_exporter:
+            verify_pods_upgraded(old_images, selector=constants.OCS_METRICS_EXPORTER)
+        else:
+            log.info(
+                "Skipping ocs-metrics-exporter upgrade verification for ODF 4.21 "
+                "external mode deployment due to bug DFBUGS-5811"
+            )
 
 
 class OCSUpgrade(object):
